@@ -16,14 +16,14 @@ class PostSeeder extends Seeder
 
         // Create published blog posts
         Post::factory()
-            ->count(250000)
+            ->count(250)
             ->blogPost()
             ->published()
             ->create();
 
         // Create draft blog posts
         Post::factory()
-            ->count(500)
+            ->count(50)
             ->blogPost()
             ->draft()
             ->create();

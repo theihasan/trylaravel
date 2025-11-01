@@ -22,6 +22,7 @@ class Post extends Model
         'content',
         'type',
         'status',
+        'difficulty',
         'featured_image',
         'meta',
         'source_url',
