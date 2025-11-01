@@ -74,7 +74,11 @@ class ContentRankingService
             ->limit($limit * 3) // Get 3x more to allow for diversity filtering
             ->get();
 
-        return $this->applySourceDiversity($posts, $limit);
+        // return $this->applySourceDiversity($posts, $limit);
+
+        $diverse = $this->applySourceDiversity($posts, $limit * 2);
+
+        return $this->applyDifficultyDiversity($diverse, $limit);
     }
 
     /**
@@ -162,6 +166,43 @@ class ContentRankingService
 
         return $result;
     }
+
+    /**
+     * Apply difficulty-based round-robin ordering to posts.
+     * Ensures fair representation of beginner, intermediate, and advanced posts.
+     */
+    public function applyDifficultyDiversity(EloquentCollection $posts, int $limit): EloquentCollection
+    {
+        // Group posts by difficulty
+        $byDifficulty = $posts->groupBy('difficulty');
+
+        // Define round order (if any missing, skip gracefully)
+        $order = ['beginner', 'intermediate', 'advanced'];
+
+        // Initialize queues
+        $queues = [];
+        foreach ($order as $level) {
+            $queues[$level] = $byDifficulty->get($level, collect())->values();
+        }
+
+        $result = new EloquentCollection;
+
+        // Round-robin picking
+        while ($result->count() < $limit && collect($queues)->flatten(1)->isNotEmpty()) {
+            foreach ($order as $level) {
+                if ($result->count() >= $limit) {
+                    break;
+                }
+
+                if ($queues[$level]->isNotEmpty()) {
+                    $result->push($queues[$level]->shift());
+                }
+            }
+        }
+
+        return $result;
+    }
+
 
     /**
      * Legacy method for backward compatibility - now more efficient

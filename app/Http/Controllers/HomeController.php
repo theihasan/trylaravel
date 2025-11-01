@@ -33,6 +33,7 @@ class HomeController extends Controller
                         'title' => $post->title,
                         'slug' => $post->slug,
                         'excerpt' => $post->excerpt,
+                        'difficulty' => $post->difficulty,
                         'type' => [
                             'value' => $post->type->value,
                             'label' => $post->getTypeLabel(),
