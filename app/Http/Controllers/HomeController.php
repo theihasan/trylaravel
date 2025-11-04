@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\PostType;
-use App\Http\Requests\ReportPostRequest;
 use App\Models\Post;
-use App\Models\Report;
-use App\Services\ContentRankingService;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Models\Report;
+use App\Enums\PostType;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cookie;
+use App\Services\ContentRankingService;
+use App\Http\Requests\ReportPostRequest;
 
 class HomeController extends Controller
 {
@@ -190,7 +191,7 @@ class HomeController extends Controller
         }
     }
 
-    public function show(Post $post): Response
+    public function show(Post $post)
     {
         if (! $post->is_published) {
             abort(404);
@@ -210,7 +211,7 @@ class HomeController extends Controller
             ->orderBy('published_at', 'asc')
             ->first(['id', 'title', 'slug', 'type']);
 
-        return Inertia::render('Posts/Show', [
+        $inertia = Inertia::render('Posts/Show', [
             'post' => [
                 'id' => $post->id,
                 'title' => $post->title,
@@ -300,6 +301,17 @@ class HomeController extends Controller
                 ] : null,
             ],
         ]);
+
+        return $inertia->toResponse(request())->withCookie($this->trackDifficulty($post));
+    }
+
+    public function trackDifficulty($post)
+    {
+        // post difficulty
+        $difficulty = $post->difficulty ?? 'beginner';
+        $cookieData = json_decode(request()->cookie('difficulty', '{}'), true);
+        $cookieData[$difficulty] = ($cookieData[$difficulty] ?? 0) + 1;
+        return Cookie::make('difficulty', json_encode($cookieData), 60 * 24 * 30);
     }
 
     private function getTrendingTags(): array

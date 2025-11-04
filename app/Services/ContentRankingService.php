@@ -177,30 +177,73 @@ class ContentRankingService
         $byDifficulty = $posts->groupBy('difficulty');
 
         // Define round order (if any missing, skip gracefully)
-        $order = ['beginner', 'intermediate', 'advanced'];
-
-        // Initialize queues
-        $queues = [];
-        foreach ($order as $level) {
-            $queues[$level] = $byDifficulty->get($level, collect())->values();
-        }
+        $order = $this->getOrder();
 
         $result = new EloquentCollection;
 
         // Round-robin picking
-        while ($result->count() < $limit && collect($queues)->flatten(1)->isNotEmpty()) {
+        if($this->checkCookie()){
+            // Loop through priority order and append all posts of each difficulty
             foreach ($order as $level) {
-                if ($result->count() >= $limit) {
-                    break;
+                $filtered = $posts->filter(fn($p) => $p->difficulty === $level);
+                foreach ($filtered as $post) {
+                    if ($result->count() >= $limit) break;
+                    $result->push($post);
                 }
+            }
+        } else{
+            // Initialize queues
+            $queues = [];
+            foreach ($order as $level) {
+                $queues[$level] = $byDifficulty->get($level, collect())->values();
+            }
 
-                if ($queues[$level]->isNotEmpty()) {
-                    $result->push($queues[$level]->shift());
+            while ($result->count() < $limit && collect($queues)->flatten(1)->isNotEmpty()) {
+                foreach ($order as $level) {
+                    if ($result->count() >= $limit) {
+                        break;
+                    }
+
+                    if ($queues[$level]->isNotEmpty()) {
+                        $result->push($queues[$level]->shift());
+                    }
                 }
             }
         }
 
         return $result;
+    }
+
+    public function getOrder()
+    {        
+        // Assing Difficulty String
+        $preferredDifficulty = $this->checkCookie();
+
+        // Base order
+        $baseOrder = ['beginner', 'intermediate', 'advanced'];
+
+        // Determine priority based on cookie
+        $order = match ($preferredDifficulty) {
+            'beginner' => ['beginner', 'intermediate', 'advanced'],
+            'intermediate' => ['intermediate', 'advanced', 'beginner'],
+            'advanced' => ['advanced', 'intermediate', 'beginner'],
+            default => $baseOrder,
+        };
+
+        return $order;
+    }
+
+    public function checkCookie()
+    {
+        // Get preferred difficulty from cookie
+        $cookieData = request()->cookie('difficulty', '{}');
+        $difficultyArray = json_decode($cookieData, true);
+        
+        // Modify Array Based On Number
+        arsort($difficultyArray);
+        
+        // Assing Difficulty String
+        return array_key_first($difficultyArray);
     }
 
 
