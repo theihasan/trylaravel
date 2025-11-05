@@ -1,9 +1,9 @@
 <script setup>
-import { Head, Link, usePage, router } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 import { computed, ref, onMounted, onUnmounted, nextTick } from 'vue';
 import { useToast } from '@/composables/useToast';
 import ToastContainer from '@/Components/ToastContainer.vue';
-import Modal from '@/Components/Modal.vue';
+import GuestPromptModal from '@/Components/GuestPromptModal.vue';
 import Prism from 'prismjs';
 
 // Import Prism CSS theme
@@ -1019,84 +1019,7 @@ onUnmounted(() => {
     </div>
 
     <!-- Guest Prompt Modal -->
-    <Modal :show="showGuestModal" @close="closeGuestModal" maxWidth="md">
-        <div class="relative p-4 sm:p-6 lg:p-8">
-            <!-- Close Button -->
-            <button 
-                @click="closeGuestModal" 
-                class="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100 touch-manipulation"
-                aria-label="Close modal"
-            >
-                <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-            </button>
-            
-            <div class="text-center">
-                <!-- Icon -->
-                <div class="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                    <svg class="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                    </svg>
-                </div>
-                
-                <!-- Title -->
-                <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3 px-2">Join LaravelSense</h2>
-                
-                <!-- Description -->
-                <p class="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base px-2 leading-relaxed">
-                    Sign up to unlock all features like saving posts, tracking your reading progress, and personalizing your feed.
-                </p>
-                
-                <!-- Features -->
-                <div class="bg-gray-50 rounded-lg sm:rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
-                    <h3 class="font-semibold text-gray-900 mb-2 sm:mb-3 text-sm sm:text-base">What you'll get:</h3>
-                    <div class="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-gray-700">
-                        <div class="flex items-center text-left">
-                            <svg class="w-3 h-3 sm:w-4 sm:h-4 text-green-600 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                            </svg>
-                            <span class="leading-tight">Save and bookmark your favorite posts</span>
-                        </div>
-                        <div class="flex items-center text-left">
-                            <svg class="w-3 h-3 sm:w-4 sm:h-4 text-green-600 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                            </svg>
-                            <span class="leading-tight">Track your reading progress</span>
-                        </div>
-                        <div class="flex items-center text-left">
-                            <svg class="w-3 h-3 sm:w-4 sm:h-4 text-green-600 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                            </svg>
-                            <span class="leading-tight">Add your own content sources</span>
-                        </div>
-                        <div class="flex items-center text-left">
-                            <svg class="w-3 h-3 sm:w-4 sm:h-4 text-green-600 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                            </svg>
-                            <span class="leading-tight">Personalized content feed</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Action Buttons -->
-                <div class="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:space-x-3">
-                    <Link 
-                        :href="route('register')" 
-                        class="w-full sm:flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white px-4 sm:px-6 py-3 rounded-lg font-semibold hover:from-red-600 hover:to-red-700 transition-all text-center text-sm sm:text-base touch-manipulation"
-                    >
-                        Create Free Account
-                    </Link>
-                    <Link 
-                        :href="route('login')" 
-                        class="w-full sm:flex-1 bg-gray-100 text-gray-700 px-4 sm:px-6 py-3 rounded-lg font-semibold hover:bg-gray-200 transition-colors text-center text-sm sm:text-base touch-manipulation"
-                    >
-                        Sign In
-                    </Link>
-                </div>
-            </div>
-        </div>
-    </Modal>
+    <GuestPromptModal :show="showGuestModal" @close="closeGuestModal" maxWidth="md"/>
 
     <!-- Toast Container -->
     <ToastContainer />
