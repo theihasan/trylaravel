@@ -191,7 +191,7 @@ class HomeController extends Controller
         }
     }
 
-    public function show(Post $post)
+    public function show(Post $post): Response
     {
         if (! $post->is_published) {
             abort(404);
@@ -302,13 +302,18 @@ class HomeController extends Controller
             ],
         ]);
 
-        return $inertia->toResponse(request())->withCookie($this->trackDifficulty($post));
+        // Set Cookie For Store Difficulty Count
+        if(!empty($post->difficulty)){
+            Cookie::queue($this->trackDifficulty($post));
+        }
+
+        return $inertia;
     }
 
     public function trackDifficulty($post)
     {
         // post difficulty
-        $difficulty = $post->difficulty ?? 'beginner';
+        $difficulty = $post->difficulty;
         $cookieData = json_decode(request()->cookie('difficulty', '{}'), true);
         $cookieData[$difficulty] = ($cookieData[$difficulty] ?? 0) + 1;
         return Cookie::make('difficulty', json_encode($cookieData), 60 * 24 * 30);

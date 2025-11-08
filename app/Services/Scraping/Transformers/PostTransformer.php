@@ -44,7 +44,7 @@ class PostTransformer implements TransformableInterface
 
         $post = Post::create($attributes);
 
-        AnalyzePostDifficulty::dispatch($post);
+        AnalyzePostDifficulty::dispatch($post->id);
         
         return $post;
     }

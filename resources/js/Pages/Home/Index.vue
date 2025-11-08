@@ -685,6 +685,8 @@ const getPostTypeColors = (type) => {
                             <div class="p-4 sm:p-6">
                                 <!-- Source Header -->
 
+                                {{ post.difficulty }}
+
                                 <div class="flex items-center justify-between mb-4">
                                     <div class="flex items-center space-x-3">
                                         <div class="w-9 h-9 bg-gradient-to-br from-gray-400 to-gray-500 rounded-full flex items-center justify-center">
