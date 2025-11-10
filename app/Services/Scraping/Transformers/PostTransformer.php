@@ -2,12 +2,13 @@
 
 namespace App\Services\Scraping\Transformers;
 
-use App\Enums\PostStatus;
-use App\Enums\PostType;
 use App\Models\Post;
-use App\Services\Scraping\Contracts\TransformableInterface;
-use App\Services\Scraping\Core\ScrapedData;
+use App\Enums\PostType;
+use App\Enums\PostStatus;
 use Illuminate\Support\Str;
+use App\Jobs\AnalyzePostDifficulty;
+use App\Services\Scraping\Core\ScrapedData;
+use App\Services\Scraping\Contracts\TransformableInterface;
 
 class PostTransformer implements TransformableInterface
 {
@@ -40,8 +41,12 @@ class PostTransformer implements TransformableInterface
     public function createPost(ScrapedData $data): Post
     {
         $attributes = $this->transform($data);
+
+        $post = Post::create($attributes);
+
+        AnalyzePostDifficulty::dispatch($post->id);
         
-        return Post::create($attributes);
+        return $post;
     }
 
     public function updatePost(Post $post, ScrapedData $data): Post

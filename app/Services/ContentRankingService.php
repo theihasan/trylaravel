@@ -3,9 +3,10 @@
 namespace App\Services;
 
 use App\Models\Post;
-use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use App\Enums\PostDifficultyLevel;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 
 class ContentRankingService
 {
@@ -74,7 +75,11 @@ class ContentRankingService
             ->limit($limit * 3) // Get 3x more to allow for diversity filtering
             ->get();
 
-        return $this->applySourceDiversity($posts, $limit);
+        // return $this->applySourceDiversity($posts, $limit);
+
+        $diverse = $this->applySourceDiversity($posts, $limit * 2);
+
+        return $this->applyDifficultyDiversity($diverse, $limit);
     }
 
     /**
@@ -162,6 +167,87 @@ class ContentRankingService
 
         return $result;
     }
+
+    /**
+     * Apply difficulty-based round-robin ordering to posts.
+     * Ensures fair representation of beginner, intermediate, and advanced posts.
+     */
+    public function applyDifficultyDiversity(EloquentCollection $posts, int $limit): EloquentCollection
+    {
+        // Group posts by difficulty once
+        $byDifficulty = $posts->groupBy('difficulty');
+        $order = $this->getOrder();
+        $result = new EloquentCollection;
+
+        if ($this->checkCookie()) {
+            // Append all posts per difficulty in order until limit
+            foreach ($order as $level) {
+                foreach ($byDifficulty->get($level, collect()) as $post) {
+                    $result->push($post);
+                    if ($result->count() >= $limit) {
+                        break 2;
+                    }
+                }
+            }
+        } else {
+            // Round-robin: initialize queues
+            $queues = [];
+            foreach ($order as $level) {
+                $queues[$level] = $byDifficulty->get($level, collect())->values()->all();
+            }
+
+            // Continue picking posts in round-robin until limit is reached
+            while ($result->count() < $limit && count(array_filter($queues))) {
+                foreach ($order as $level) {
+                    if ($result->count() >= $limit) break;
+                    if (!empty($queues[$level])) {
+                        $result->push(array_shift($queues[$level]));
+                    }
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    public function getOrder()
+    {        
+        // Assing Difficulty String
+        $preferredDifficulty = $this->checkCookie();
+
+        // Convert to enum instance, fallback to Beginner if invalid
+        $preferredEnum = PostDifficultyLevel::fromString($preferredDifficulty);
+
+        // Base order of all levels
+        $allLevels = PostDifficultyLevel::values();
+
+        // Rotate array so preferred difficulty comes first
+        $preferredIndex = array_search($preferredEnum->value, $allLevels);
+        if ($preferredIndex === false) {
+            return $allLevels;
+        }
+
+        $ordered = array_merge(
+            array_slice($allLevels, $preferredIndex),
+            array_slice($allLevels, 0, $preferredIndex)
+        );
+
+        return $ordered;
+    }
+
+    public function checkCookie()
+    {
+        // Get preferred difficulty from cookie
+        $cookieData = request()->cookie('difficulty', '{}');
+        $difficultyArray = json_decode($cookieData, true);
+        
+        // Modify Array Based On Number
+        arsort($difficultyArray);
+        
+        // Assing Difficulty String
+        return array_key_first($difficultyArray);
+    }
+
 
     /**
      * Legacy method for backward compatibility - now more efficient
